@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Create EC2 INSTANCE WITH CLI "
+Parameters:
+  myVPC:
+    Description: VPC used to deploy our resources below
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet:
+    Description: Subnet to be used for our Web Server
+    Type: AWS::EC2::Subnet::Id
+  AMItoUse:
+    Description: AMI to use for our base image
+    Type: String
+Resources:
+  testSecurityGroupForEc2Cli:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Challenge 1"
+      VpcId:
+        Ref: myVPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: "0.0.0.0/0"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+  testEC2FromCli:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AMItoUse
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "testSecurityGroupForEc2Cli"
+          SubnetId:
+            Ref: "PublicSubnet"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y httpd
+          sudo systemctl start httpd
+          sudo systemctl enable httpd
